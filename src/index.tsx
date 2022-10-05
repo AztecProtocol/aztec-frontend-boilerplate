@@ -3,16 +3,23 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { BridgeDataProvider } from "./bridge-data";
+import { BridgeDataProvider } from "./bridge-data/bridge-data";
+import { WagmiConfig } from "wagmi";
+import { SdkProvider } from "./sdk";
+import { wagmiClient } from "./wagmi";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <BridgeDataProvider>
-      <App />
-    </BridgeDataProvider>
+    <WagmiConfig client={wagmiClient}>
+      <SdkProvider>
+        <BridgeDataProvider>
+          <App />
+        </BridgeDataProvider>
+      </SdkProvider>
+    </WagmiConfig>
   </React.StrictMode>
 );
 
