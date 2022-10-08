@@ -25,7 +25,7 @@ A user with Metamask may interact with the Aztec Network using the project. Its 
 
 - Initialize the Aztec SDK
 - Log the Aztec SDK
-- Log knwon bridges on the Aztec Testnet
+- Log known bridges on the Aztec Testnet
 
 See [App.tsx](src/App.tsx) for more details.
 
