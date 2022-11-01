@@ -10,7 +10,9 @@ import {
   BridgeCallData,
   Signer,
   AztecSdkUser,
+  EthersAdapter,
 } from "@aztec/sdk";
+import { ethers } from "ethers";
 
 const privateKeyMessage = Buffer.from(
   `Sign this message to generate your Aztec Privacy Key. This key lets the application decrypt your balance on Aztec.\n\nIMPORTANT: Only sign this message if you trust the application.`
@@ -64,7 +66,8 @@ export async function depositEthToAztec(
   recipient: GrumpkinAddress,
   tokenQuantity: bigint,
   settlementTime: TxSettlementTime,
-  sdk: AztecSdk
+  sdk: AztecSdk,
+  signer: ethers.Signer
 ): Promise<TxId> {
   const tokenAssetId = sdk.getAssetIdBySymbol("ETH");
   const tokenDepositFee = (await sdk.getDepositFees(tokenAssetId))[
@@ -79,7 +82,8 @@ export async function depositEthToAztec(
     tokenAssetValue,
     tokenDepositFee,
     recipient,
-    true
+    true,
+    new EthersAdapter(signer.provider!)
   );
   await tokenDepositController.createProof();
   await tokenDepositController.sign();
@@ -101,7 +105,8 @@ export async function registerAccount(
   assetAmount: bigint,
   settlementTime: TxSettlementTime,
   depositor: EthAddress,
-  sdk: AztecSdk
+  sdk: AztecSdk,
+  signer: ethers.Signer
 ): Promise<TxId> {
   const assetId = sdk.getAssetIdBySymbol(assetSymbol);
   const deposit = { assetId, value: assetAmount };
@@ -116,7 +121,8 @@ export async function registerAccount(
     deposit, // Optional, can be of zero value
     txFee,
     depositor,
-    // Optional Ethereum Provider
+    new EthersAdapter(signer.provider!)
+    // optional feePayer requires an Aztec Signer to pay the fee
   );
 
   await controller.depositFundsToContract();
@@ -163,11 +169,14 @@ export async function aztecConnect(
     outputAssetIdA,
     inputAssetIdB,
     outputAssetIdB,
-    auxData,
+    auxData
   );
 
   // Initiate controller parameters
-  const assetValue: AssetValue = { assetId: inputAssetIdA, value: inputAssetAAmount };
+  const assetValue: AssetValue = {
+    assetId: inputAssetIdA,
+    value: inputAssetAAmount,
+  };
   const fee = (await sdk.getDefiFees(bridgeCallData))[settlementTime];
 
   const controller = sdk.createDefiController(

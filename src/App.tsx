@@ -2,11 +2,7 @@ import "./App.css";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import {
-  AztecSdk,
-  createAztecSdk,
   EthersAdapter,
-  EthereumProvider,
-  SdkFlavour,
   AztecSdkUser,
   GrumpkinAddress,
   SchnorrSigner,
@@ -17,14 +13,18 @@ import {
 
 import { depositEthToAztec, registerAccount, aztecConnect } from "./utils";
 import { fetchBridgeData } from "./bridge-data";
+import { useSdk } from "./sdk";
+import { useConnect, useSigner } from "wagmi";
 
 declare var window: any;
 
 const App = () => {
   const [hasMetamask, setHasMetamask] = useState(false);
   const [ethAccount, setEthAccount] = useState<EthAddress | null>(null);
-  const [initing, setIniting] = useState(false);
-  const [sdk, setSdk] = useState<null | AztecSdk>(null);
+  const { connectAsync, connectors } = useConnect();
+  const { data: l1Signer } = useSigner();
+  const sdk = useSdk();
+  const initing = !sdk;
   const [account0, setAccount0] = useState<AztecSdkUser | null>(null);
   const [userExists, setUserExists] = useState<boolean>(false);
   const [accountPrivateKey, setAccountPrivateKey] = useState<Buffer | null>(
@@ -48,38 +48,26 @@ const App = () => {
   }, []);
 
   async function connect() {
-    if (window.ethereum) {
-      setIniting(true); // Start init status
-
+    const mmConnector = connectors[0];
+    if (mmConnector && sdk) {
+      const { account: mmAddressStr } = await connectAsync({
+        connector: mmConnector,
+      });
       // Get Metamask provider
       // TODO: Show error if Metamask is not on Aztec Testnet
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const ethereumProvider: EthereumProvider = new EthersAdapter(provider);
+      const mmProvider = new EthersAdapter(
+        (await mmConnector.getSigner()).provider
+      );
 
       // Get Metamask ethAccount
-      await provider.send("eth_requestAccounts", []);
-      const mmSigner = provider.getSigner();
-      const mmAddress = EthAddress.fromString(await mmSigner.getAddress());
+      const mmAddress = EthAddress.fromString(mmAddressStr);
       setEthAccount(mmAddress);
-
-      // Initialize SDK
-      const sdk = await createAztecSdk(ethereumProvider, {
-        serverUrl: "https://api.aztec.network/aztec-connect-testnet/falafel", // Testnet
-        pollInterval: 1000,
-        memoryDb: true,
-        debug: "bb:*",
-        flavour: SdkFlavour.PLAIN,
-        minConfirmation: 1, // ETH block confirmations
-      });
-      await sdk.run();
-      console.log("Aztec SDK initialized:", sdk);
-      setSdk(sdk);
 
       // Generate user's privacy keypair
       // The privacy keypair (also known as account keypair) is used for en-/de-crypting values of the user's spendable funds (i.e. balance) on Aztec
       // It can but is not typically used for receiving/spending funds, as the user should be able to share viewing access to his/her Aztec account via sharing his/her privacy private key
       const { publicKey: accPubKey, privateKey: accPriKey } =
-        await sdk.generateAccountKeyPair(mmAddress);
+        await sdk.generateAccountKeyPair(mmAddress, mmProvider);
       console.log("Privacy Key:", accPriKey);
       console.log("Public Key:", accPubKey.toString());
       setAccountPrivateKey(accPriKey);
@@ -95,13 +83,12 @@ const App = () => {
       // Generate user's spending key & signer
       // The spending keypair is used for receiving/spending funds on Aztec
       const { privateKey: spePriKey } = await sdk.generateSpendingKeyPair(
-        mmAddress
+        mmAddress,
+        mmProvider
       );
       const schSigner = await sdk?.createSchnorrSigner(spePriKey);
       console.log("Signer:", schSigner);
       setSpendingSigner(schSigner);
-
-      setIniting(false); // End init status
     }
   }
 
@@ -109,6 +96,10 @@ const App = () => {
   // It registers an human-readable alias with the user's privacy & spending keypairs
   // All future funds transferred to the alias would be viewable with the privacy key and spendable with the spending key respectively
   async function registerNewAccount() {
+    if (!l1Signer) {
+      console.error("Wallet disconnected");
+      return;
+    }
     try {
       const depositTokenQuantity: bigint = ethers.utils
         .parseEther(amount.toString())
@@ -123,7 +114,8 @@ const App = () => {
         depositTokenQuantity,
         TxSettlementTime.NEXT_ROLLUP,
         ethAccount!,
-        sdk!
+        sdk!,
+        l1Signer
       );
 
       console.log("Registration TXID:", txId);
@@ -138,6 +130,10 @@ const App = () => {
   }
 
   async function depositEth() {
+    if (!l1Signer) {
+      console.error("Wallet disconnected");
+      return;
+    }
     try {
       const depositTokenQuantity: bigint = ethers.utils
         .parseEther(amount.toString())
@@ -148,7 +144,8 @@ const App = () => {
         accountPublicKey!,
         depositTokenQuantity,
         TxSettlementTime.NEXT_ROLLUP,
-        sdk!
+        sdk!,
+        l1Signer
       );
 
       console.log("Deposit TXID:", txId);
@@ -207,7 +204,7 @@ const App = () => {
       )
     );
   }
-  
+
   async function logBridges() {
     const bridges = await fetchBridgeData();
     console.log("Known bridges on Testnet:", bridges);
@@ -295,7 +292,7 @@ const App = () => {
         // TODO: Fix rendering of this. Not rendered, reason unknown.
         "Metamask is not detected. Please make sure it is installed and enabled."
       )}
-      {initing ? <div>Initializing...</div> : ""}
+      {initing ? <div>Initializing Aztec SDK...</div> : ""}
     </div>
   );
 };
