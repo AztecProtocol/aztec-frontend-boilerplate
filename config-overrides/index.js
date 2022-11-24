@@ -1,12 +1,16 @@
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const ResolveTypeScriptPlugin = require('resolve-typescript-plugin');
-const path = require('path');
-const webpack = require('webpack');
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+const ResolveTypeScriptPlugin = require("resolve-typescript-plugin");
+const path = require("path");
+const webpack = require("webpack");
 const { override } = require("customize-cra");
+const Tailwind = require('tailwindcss')
+const Autoprefixer = require('autoprefixer')
 
 function stuff(config, env) {
   config.resolve = {
-    plugins: [new ResolveTypeScriptPlugin()],
+    plugins: [
+      new ResolveTypeScriptPlugin(),
+    ],
     fallback: {
       crypto: false,
       os: false,
@@ -21,22 +25,24 @@ function stuff(config, env) {
       util: require.resolve("util/"),
       stream: require.resolve("stream-browserify"),
       string_decoder: require.resolve("string_decoder/"),
-    }
+    },
   };
   config.plugins.push(
-    new webpack.ProvidePlugin({ Buffer: ['buffer', 'Buffer'] }),
+    new webpack.ProvidePlugin({ Buffer: ["buffer", "Buffer"] }),
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: `${path.dirname(require.resolve(`@aztec/sdk`))}/barretenberg.wasm`,
-          to: 'barretenberg.wasm',
+          from: `${path.dirname(
+            require.resolve(`@aztec/sdk`)
+          )}/barretenberg.wasm`,
+          to: "barretenberg.wasm",
         },
         {
           from: `${path.dirname(require.resolve(`@aztec/sdk`))}/web_worker.js`,
-          to: 'web_worker.js',
+          to: "web_worker.js",
         },
       ],
-    }),
+    })
   );
   return config;
 }

@@ -74,6 +74,8 @@ const App = () => {
       });
       await sdk.run();
       console.log("Aztec SDK initialized:", sdk);
+
+      console.log((sdk as any).core);
       setSdk(sdk);
 
       // Generate user's privacy keypair
@@ -112,34 +114,40 @@ const App = () => {
   // Registering on Aztec enables the use of intuitive aliases for fund transfers
   // It registers an human-readable alias with the user's privacy & spending keypairs
   // All future funds transferred to the alias would be viewable with the privacy key and spendable with the spending key respectively
-  async function registerNewAccount() {
-    try {
-      const depositTokenQuantity: bigint = ethers.utils
-        .parseEther(amount.toString())
-        .toBigInt();
+  /**
+ * Register new account
+ */
+async function registerNewAccount() {
+  try {
+    // Convert the amount to a BigInt
+    const depositTokenQuantity: bigint = ethers.utils
+      .parseEther(amount.toString())
+      .toBigInt();
 
-      const txId = await registerAccount(
-        accountPublicKey!,
-        alias,
-        accountPrivateKey!,
-        spendingSigner!.getPublicKey(),
-        "eth",
-        depositTokenQuantity,
-        TxSettlementTime.NEXT_ROLLUP,
-        ethAccount!,
-        sdk!
-      );
+    // Register the account
+    const txId = await registerAccount(
+      accountPublicKey!,
+      alias,
+      accountPrivateKey!,
+      spendingSigner!.getPublicKey(),
+      "eth",
+      depositTokenQuantity,
+      TxSettlementTime.NEXT_ROLLUP,
+      ethAccount!,
+      sdk!
+    );
 
-      console.log("Registration TXID:", txId);
-      console.log(
-        "View TX on Explorer:",
-        `https://aztec-connect-testnet-explorer.aztec.network/tx/${txId.toString()}`
-      );
-      setTxId(txId);
-    } catch (e) {
-      console.log(e); // e.g. Reject TX
-    }
+    // Print the TXID and a link to view the transaction on the Explorer
+    console.log("Registration TXID:", txId);
+    console.log(
+      "View TX on Explorer:",
+      `https://aztec-connect-testnet-explorer.aztec.network/tx/${txId.toString()}`
+    );
+    setTxId(txId);
+  } catch (e) {
+    console.log(e); // e.g. Reject TX
   }
+}
 
   async function depositEth() {
     try {
@@ -252,7 +260,7 @@ const App = () => {
                   </label>
                 </form>
                 {!userExists ? (
-                  <button onClick={() => registerNewAccount()}>
+                  <button className="btn" onClick={() => registerNewAccount()}>
                     Register Aztec Account
                   </button>
                 ) : (
@@ -264,8 +272,8 @@ const App = () => {
             )}
             {spendingSigner && account0 ? (
               <div>
-                <button onClick={() => depositEth()}>Deposit ETH</button>
-                <button onClick={() => bridgeCrvLido()}>
+                <button className="btn" onClick={() => depositEth()}>Deposit ETH</button>
+                <button className="btn" onClick={() => bridgeCrvLido()}>
                   Swap ETH to wstETH
                 </button>
               </div>
@@ -273,12 +281,12 @@ const App = () => {
               ""
             )}
             {accountPrivateKey ? (
-              <button onClick={() => logBalance()}>Log Balance</button>
+              <button className="btn" onClick={() => logBalance()}>Log Balance</button>
             ) : (
               ""
             )}
-            <button onClick={() => logBridges()}>Log Bridges</button>
-            <button onClick={() => console.log("sdk", sdk)}>Log SDK</button>
+            <button className="btn" onClick={() => logBridges()}>Log Bridges</button>
+            <button className="btn" onClick={() => console.log("sdk", sdk)}>Log SDK</button>
             {txId ? (
               <div>
                 Last TX: {txId.toString()}{" "}
@@ -293,7 +301,7 @@ const App = () => {
             )}
           </div>
         ) : (
-          <button onClick={() => connect()}>Connect Metamask</button>
+          <button className="btn" onClick={() => connect()}>Connect Metamask</button>
         )
       ) : (
         // TODO: Fix rendering of this. Not rendered, reason unknown.
