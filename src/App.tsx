@@ -35,9 +35,6 @@ const App = () => {
   const [spendingSigner, setSpendingSigner] = useState<
     SchnorrSigner | undefined
   >(undefined);
-  const [alias, setAlias] = useState("");
-  const [amount, setAmount] = useState(0);
-  const [txId, setTxId] = useState<TxId | null>(null);
 
   // Metamask Check
   useEffect(() => {
@@ -81,6 +78,7 @@ const App = () => {
           minConfirmation: 1, // ETH block confirmations
         });
         await sdk.run();
+        await sdk.awaitSynchronised();
         console.log("Aztec SDK initialized:", sdk);
         setSdk(sdk);
 
@@ -98,6 +96,7 @@ const App = () => {
         let account0 = (await sdk.userExists(accPubKey))
           ? await sdk.getUser(accPubKey)
           : await sdk.addUser(accPriKey);
+        await sdk.awaitUserSynchronised(account0.id);
         setAccount0(account0);
 
         setIniting(false); // End init status
