@@ -75,7 +75,7 @@ const App = () => {
         const sdk = await createAztecSdk(ethereumProvider, {
           serverUrl: networkConfig[chainId].rollupProvider,
           pollInterval: 1000,
-          memoryDb: true,
+          // memoryDb: true,
           debug: "bb:*",
           flavour: SdkFlavour.PLAIN,
           minConfirmation: 1, // ETH block confirmations
