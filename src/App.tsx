@@ -100,7 +100,7 @@ const App = () => {
 
   async function getHistory() {
     let txs = await sdk!.getUserTxs(accountPublicKey!);
-    let rows = [["userId", "txId", "created", "settled", "proofId"]];
+    let rows = [["userId", "txId", "created", "settled", "Tx Type"]];
     txs.map((tx) => {
       let txType = "";
       switch (tx.proofId) {
