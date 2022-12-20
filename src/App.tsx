@@ -109,10 +109,11 @@ const App = () => {
 
   async function getHistory() {
     let txs = await sdk!.getUserTxs(accountPublicKey!);
-    let rows = [["userId", "txId", "created", "settled", "Tx Type", "Value", "Fee", "Sender?"]];
+    let rows = [["userId", "txId", "created", "settled", "Tx Type", "AssetId", "Value", "Fee", "Sender?"]];
     txs.map((tx) => {
       let txType = "",
         value = "",
+        assetId = "",
         isSender = "",
         fee = "";
       switch (tx.proofId) {
@@ -136,8 +137,9 @@ const App = () => {
           break;
       }
       if (tx instanceof UserPaymentTx) {
-        value = tx.value.toString();
-        fee = tx.fee.toString();
+        value = tx.value.value.toString();
+        assetId = tx.value.assetId.toString();
+        fee = tx.fee.value.toString();
       }
       rows.push([
         tx.userId.toString(),
@@ -145,6 +147,7 @@ const App = () => {
         tx.created!.toDateString(),
         tx.settled!.toDateString(),
         txType,
+        assetId,
         value,
         fee,
         isSender
