@@ -13,10 +13,9 @@ import {
   EthAddress,
   TxSettlementTime,
   TxId,
+  UserPaymentTx,
 } from "@aztec/sdk";
 import networkConfig from "./network_config.js";
-
-import { depositEthToAztec, registerAccount, aztecConnect } from "./utils.js";
 
 declare var window: any;
 
@@ -110,9 +109,12 @@ const App = () => {
 
   async function getHistory() {
     let txs = await sdk!.getUserTxs(accountPublicKey!);
-    let rows = [["userId", "txId", "created", "settled", "Tx Type"]];
+    let rows = [["userId", "txId", "created", "settled", "Tx Type", "Value", "Fee", "Sender?"]];
     txs.map((tx) => {
-      let txType = "";
+      let txType = "",
+        value = "",
+        isSender = "",
+        fee = "";
       switch (tx.proofId) {
         case 1:
           txType = "Deposit";
@@ -133,12 +135,19 @@ const App = () => {
           txType = "Defi Claim";
           break;
       }
+      if (tx instanceof UserPaymentTx) {
+        value = tx.value.toString();
+        fee = tx.fee.toString();
+      }
       rows.push([
         tx.userId.toString(),
         tx.txId!.toString(),
         tx.created!.toDateString(),
         tx.settled!.toDateString(),
         txType,
+        value,
+        fee,
+        isSender
       ]);
     });
     let csvContent =
