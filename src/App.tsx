@@ -14,6 +14,7 @@ import {
   TxSettlementTime,
   TxId,
 } from "@aztec/sdk";
+import networkConfig from "./network_config.js";
 
 import { depositEthToAztec, registerAccount, aztecConnect } from "./utils.js";
 
@@ -22,6 +23,7 @@ declare var window: any;
 const App = () => {
   const [hasMetamask, setHasMetamask] = useState(false);
   const [ethAccount, setEthAccount] = useState<EthAddress | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
   const [initing, setIniting] = useState(false);
   const [sdk, setSdk] = useState<null | AztecSdk>(null);
   const [account0, setAccount0] = useState<AztecSdkUser | null>(null);
@@ -62,9 +64,17 @@ const App = () => {
         const mmAddress = EthAddress.fromString(await mmSigner.getAddress());
         setEthAccount(mmAddress);
 
+        let chainId = parseInt(
+          await ethereumProvider.request({
+            method: "eth_chainId",
+          }),
+          16
+        );
+        setChainId(chainId);
+
         // Initialize SDK
         const sdk = await createAztecSdk(ethereumProvider, {
-          serverUrl: "https://api.aztec.network/aztec-connect-dev/falafel", // Testnet
+          serverUrl: networkConfig[chainId].rollupProvider,
           pollInterval: 1000,
           // memoryDb: true,
           debug: "bb:*",
@@ -128,7 +138,7 @@ const App = () => {
         tx.txId!.toString(),
         tx.created!.toDateString(),
         tx.settled!.toDateString(),
-        txType
+        txType,
       ]);
     });
     let csvContent =
@@ -141,12 +151,7 @@ const App = () => {
     <div className="App">
       {hasMetamask ? (
         sdk ? (
-          <div>
-            {userExists ? <div>Welcome back!</div> : ""}
-            <button onClick={() => getHistory()}>
-              Download transaction history
-            </button>
-          </div>
+          <div>{userExists ? <div>Welcome back!</div> : ""}</div>
         ) : (
           <button onClick={() => connect()}>Connect Metamask</button>
         )
@@ -155,6 +160,13 @@ const App = () => {
         "Metamask is not detected. Please make sure it is installed and enabled."
       )}
       {initing ? <div>Initializing...</div> : ""}
+      {account0 ? (
+        <button onClick={() => getHistory()}>
+          Download transaction history
+        </button>
+      ) : (
+        ""
+      )}
     </div>
   );
 };
