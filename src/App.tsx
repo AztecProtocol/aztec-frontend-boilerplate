@@ -75,7 +75,7 @@ const App = () => {
         const sdk = await createAztecSdk(ethereumProvider, {
           serverUrl: networkConfig[chainId].rollupProvider,
           pollInterval: 1000,
-          // memoryDb: true,
+          memoryDb: true,
           debug: "bb:*",
           flavour: SdkFlavour.PLAIN,
           minConfirmation: 1, // ETH block confirmations
@@ -140,6 +140,7 @@ const App = () => {
         value = tx.value.value.toString();
         assetId = tx.value.assetId.toString();
         fee = tx.fee.value.toString();
+        isSender = tx.isSender.toString();
       }
       rows.push([
         tx.userId.toString(),
@@ -171,7 +172,10 @@ const App = () => {
         // TODO: Fix rendering of this. Not rendered, reason unknown.
         "Metamask is not detected. Please make sure it is installed and enabled."
       )}
-      {initing ? <div>Initializing...</div> : ""}
+      {initing ? <p>Initializing... This can take some time.
+        <br/>
+        <br/>
+        You can right click on the page, click "Inspect" and navigate to the "Console" tab to track progress.</p> : ""}
       {account0 ? (
         <button onClick={() => getHistory()}>
           Download transaction history
