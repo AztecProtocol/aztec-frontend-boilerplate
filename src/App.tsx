@@ -128,6 +128,7 @@ const App = () => {
         tx.txId!.toString(),
         tx.created!.toDateString(),
         tx.settled!.toDateString(),
+        txType
       ]);
     });
     let csvContent =
