@@ -161,6 +161,8 @@ const App = () => {
 
   return (
     <div className="App">
+      <h1>Aztec Account History Exporter Tool</h1>
+      <p>View the source code <a target="_blank" href="https://github.com/AztecProtocol/aztec-frontend-boilerplate/tree/jc/history-export">here.</a></p>
       {hasMetamask ? (
         sdk ? (
           <div>{userExists ? <div>Welcome back!</div> : ""}</div>
