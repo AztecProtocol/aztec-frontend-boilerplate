@@ -66,7 +66,7 @@ const App = () => {
         const sdk = await createAztecSdk(ethereumProvider, {
           serverUrl: "https://api.aztec.network/aztec-connect-dev/falafel", // Testnet
           pollInterval: 1000,
-          memoryDb: true,
+          // memoryDb: true,
           debug: "bb:*",
           flavour: SdkFlavour.PLAIN,
           minConfirmation: 1, // ETH block confirmations
@@ -102,15 +102,36 @@ const App = () => {
     let txs = await sdk!.getUserTxs(accountPublicKey!);
     let rows = [["userId", "txId", "created", "settled", "proofId"]];
     txs.map((tx) => {
+      let txType = "";
+      switch (tx.proofId) {
+        case 1:
+          txType = "Deposit";
+          break;
+        case 2:
+          txType = "Withdrawal";
+          break;
+        case 3:
+          txType = "Send";
+          break;
+        case 4:
+          txType = "Account";
+          break;
+        case 5:
+          txType = "Defi Deposit";
+          break;
+        case 6:
+          txType = "Defi Claim";
+          break;
+      }
       rows.push([
         tx.userId.toString(),
         tx.txId!.toString(),
         tx.created!.toDateString(),
         tx.settled!.toDateString(),
-        tx.proofId!.toString(),
       ]);
     });
-    let csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
+    let csvContent =
+      "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
     var encodedUri = encodeURI(csvContent);
     window.open(encodedUri);
   }
@@ -121,7 +142,9 @@ const App = () => {
         sdk ? (
           <div>
             {userExists ? <div>Welcome back!</div> : ""}
-            <button onClick={() => getHistory()}>Download transaction history</button>
+            <button onClick={() => getHistory()}>
+              Download transaction history
+            </button>
           </div>
         ) : (
           <button onClick={() => connect()}>Connect Metamask</button>
