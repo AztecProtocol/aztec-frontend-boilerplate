@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@aztec/sdk": "2.1.0-testnet.71",
+    "@aztec/sdk": "2.1.65",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
@@ -18,9 +18,6 @@
     "react-scripts": "5.0.1",
     "typescript": "^4.4.2",
     "web-vitals": "^2.1.0"
-  },
-  "resolutions": {
-    "@aztec/bridge-clients": "0.1.63"
   },
   "scripts": {
     "start": "react-app-rewired start",
