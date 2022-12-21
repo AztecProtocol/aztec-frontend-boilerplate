@@ -12,6 +12,7 @@ import {
   EthAddress,
   TxId,
   UserPaymentTx,
+  SchnorrSigner,
 } from "@aztec/sdk";
 import networkConfig from "./network_config.js";
 
