@@ -108,7 +108,20 @@ const App = () => {
 
   async function getHistory() {
     let txs = await sdk!.getUserTxs(accountPublicKey!);
-    let rows = [["userId", "txId", "created", "settled", "Tx Type", "AssetId", "Value", "Fee", "Sender?"]];
+    let rows = [
+      [
+        "Ethereum account",
+        "Aztec userId",
+        "txId",
+        "created",
+        "settled",
+        "Tx Type",
+        "AssetId",
+        "Value",
+        "Fee",
+        "Sender?",
+      ],
+    ];
     txs.map((tx) => {
       let txType = "",
         value = "",
@@ -142,6 +155,7 @@ const App = () => {
         isSender = tx.isSender.toString();
       }
       rows.push([
+        ethAccount!.toString(),
         tx.userId.toString(),
         tx.txId!.toString(),
         tx.created!.toDateString(),
@@ -150,7 +164,7 @@ const App = () => {
         assetId,
         value,
         fee,
-        isSender
+        isSender,
       ]);
     });
     let csvContent =
@@ -162,10 +176,18 @@ const App = () => {
   return (
     <div className="App">
       <h1>Aztec Account History Exporter Tool</h1>
-      <p>View the source code <a target="_blank" href="https://github.com/AztecProtocol/aztec-frontend-boilerplate/tree/jc/history-export">here.</a></p>
+      <p>
+        View the source code{" "}
+        <a
+          target="_blank"
+          href="https://github.com/AztecProtocol/aztec-frontend-boilerplate/tree/jc/history-export"
+        >
+          here.
+        </a>
+      </p>
       {hasMetamask ? (
         sdk ? (
-          <div>{userExists ? <div>Welcome back!</div> : ""}</div>
+          <div></div>
         ) : (
           <button onClick={() => connect()}>Connect Metamask</button>
         )
@@ -173,10 +195,17 @@ const App = () => {
         // TODO: Fix rendering of this. Not rendered, reason unknown.
         "Metamask is not detected. Please make sure it is installed and enabled."
       )}
-      {initing ? <p>Initializing... This can take some time.
-        <br/>
-        <br/>
-        You can right click on the page, click "Inspect" and navigate to the "Console" tab to track progress.</p> : ""}
+      {initing ? (
+        <p>
+          Initializing... This can take some time.
+          <br />
+          <br />
+          You can right click on the page, click "Inspect" and navigate to the
+          "Console" tab to track progress.
+        </p>
+      ) : (
+        ""
+      )}
       {account0 ? (
         <button onClick={() => getHistory()}>
           Download transaction history
