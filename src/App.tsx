@@ -9,9 +9,7 @@ import {
   SdkFlavour,
   AztecSdkUser,
   GrumpkinAddress,
-  SchnorrSigner,
   EthAddress,
-  TxSettlementTime,
   TxId,
   UserPaymentTx,
 } from "@aztec/sdk";
