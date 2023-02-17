@@ -7,15 +7,17 @@ import {
   EthersAdapter,
   EthereumProvider,
   GrumpkinAddress,
-  SchnorrSigner,
   EthAddress,
-  TxSettlementTime,
-  TxId,
   EthereumRpc,
   BarretenbergWasm,
   createIframeAztecWalletProviderServer,
   LegacyKeyStore,
+  EIP1193SignClient,
+  AztecWalletProviderClient,
+  RPC_METHODS,
 } from "@aztec/sdk";
+
+import { createClient, createWeb3Modal } from './walletConnect.js';
 
 // import { depositEthToAztec, registerAccount, aztecConnect } from "./utils.js";
 // import { fetchBridgeData } from "./bridge-data.js";
@@ -29,18 +31,8 @@ const App = () => {
   const [sdk, setSdk] = useState<null | AztecSdk>(null);
   const [account0, setAccount0] = useState<GrumpkinAddress | null>(null);
   const [ethereumRpc, setEthereumRpc] = useState<EthereumRpc | null>(null);
-  // const [userExists, setUserExists] = useState<boolean>(false);
-  // const [accountPrivateKey, setAccountPrivateKey] = useState<Buffer | null>(
-  //   null
-  // );
   const [accountPublicKey, setAccountPublicKey] =
     useState<GrumpkinAddress | null>(null);
-  // const [spendingSigner, setSpendingSigner] = useState<
-  //   SchnorrSigner | undefined
-  // >(undefined);
-  // const [alias, setAlias] = useState("");
-  // const [amount, setAmount] = useState(0);
-  // const [txId, setTxId] = useState<TxId | null>(null);
 
   // Metamask Check
   useEffect(() => {
@@ -84,10 +76,13 @@ const App = () => {
           debug: "bb:*",
           minConfirmation: 1, // ETH block confirmations
         });
-        if (useWalletConnect) {
+
+        console.log('made it')
+
+        
           const signClient = await createClient();
           const web3Modal = await createWeb3Modal();
-          const aztecChainId = +(aztecChainIdStr || "671337");
+          const aztecChainId =  671337;
           const chains = [`aztec:${aztecChainId}`];
 
           const { uri, approval } = await signClient.connect({
@@ -108,22 +103,15 @@ const App = () => {
             new EIP1193SignClient(signClient, aztecChainId, session)
           );
 
-          this.aztecWalletProvider = await awpClient.init();
-        }
-
-        await sdk.run();
-        await sdk.awaitSynchronised();
         console.log("Aztec SDK initialized:", sdk);
         setSdk(sdk);
 
-        const keyStore = sdk.createLegacyKeyStore(
-          ethAddress,
-          [],
-          ethereumProvider
-        );
-        const aztecWalletProvider = await sdk.createAztecWalletProvider(
-          keyStore
-        );
+        // const keyStore = sdk.createLegacyKeyStore(
+        //   ethAddress,
+        //   [],
+        //   ethereumProvider
+        // );
+        const aztecWalletProvider = await awpClient.init();
 
         await aztecWalletProvider.connect();
         const accountPublicKey = await sdk.addAccount(aztecWalletProvider);
