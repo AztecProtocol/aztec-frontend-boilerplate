@@ -50,60 +50,58 @@ const App = () => {
   async function connect() {
     try {
       if (window.ethereum) {
-      setIniting(true); // Start init status
+        setIniting(true); // Start init status
 
-      // Get Metamask provider
-      // TODO: Show error if Metamask is not on Aztec Testnet
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const ethereumProvider: EthereumProvider = new EthersAdapter(provider);
+        // Get Metamask provider
+        // TODO: Show error if Metamask is not on Aztec Testnet
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const ethereumProvider: EthereumProvider = new EthersAdapter(provider);
 
-      // Get Metamask ethAccount
-      await provider.send("eth_requestAccounts", []);
-      const mmSigner = provider.getSigner();
-      const mmAddress = EthAddress.fromString(await mmSigner.getAddress());
-      setEthAccount(mmAddress);
+        // Get Metamask ethAccount
+        await provider.send("eth_requestAccounts", []);
+        const mmSigner = provider.getSigner();
+        const mmAddress = EthAddress.fromString(await mmSigner.getAddress());
+        setEthAccount(mmAddress);
 
-      // Initialize SDK
-      const sdk = await createAztecSdk(ethereumProvider, {
-        serverUrl: "http://localhost:8081", // local devnet, run `yarn devnet` to start
-        pollInterval: 2000,
-        memoryDb: true,
-        debug: "bb:*",
-        flavour: SdkFlavour.PLAIN,
-        minConfirmation: 1, // ETH block confirmations
-      });
-      await sdk.run();
-      await sdk.awaitSynchronised();
-      console.log("Aztec SDK initialized:", sdk);
-      setSdk(sdk);
+        // Initialize SDK
+        const sdk = await createAztecSdk(ethereumProvider, {
+          serverUrl: "http://localhost:8081", // local devnet, run `yarn devnet` to start
+          pollInterval: 2000,
+          debug: "bb:*",
+          minConfirmation: 1, // ETH block confirmations
+        });
+        await sdk.run();
+        await sdk.awaitSynchronised();
+        console.log("Aztec SDK initialized:", sdk);
+        setSdk(sdk);
 
-      // Generate user's privacy keypair
-      // The privacy keypair (also known as account keypair) is used for en-/de-crypting values of the user's spendable funds (i.e. balance) on Aztec
-      // It can but is not typically used for receiving/spending funds, as the user should be able to share viewing access to his/her Aztec account via sharing his/her privacy private key
-      const { publicKey: accPubKey, privateKey: accPriKey } =
-        await sdk.generateAccountKeyPair(mmAddress);
-      console.log("Privacy Key:", accPriKey);
-      console.log("Public Key:", accPubKey.toString());
-      setAccountPrivateKey(accPriKey);
-      setAccountPublicKey(accPubKey);
-      if (await sdk.isAccountRegistered(accPubKey)) setUserExists(true);
+        // Generate user's privacy keypair
+        // The privacy keypair (also known as account keypair) is used for en-/de-crypting values of the user's spendable funds (i.e. balance) on Aztec
+        // It can but is not typically used for receiving/spending funds, as the user should be able to share viewing access to his/her Aztec account via sharing his/her privacy private key
+        const { publicKey: accPubKey, privateKey: accPriKey } =
+          await sdk.generateAccountKeyPair(mmAddress);
+        console.log("Privacy Key:", accPriKey);
+        console.log("Public Key:", accPubKey.toString());
+        setAccountPrivateKey(accPriKey);
+        setAccountPublicKey(accPubKey);
+        if (await sdk.isAccountRegistered(accPubKey)) setUserExists(true);
 
-      // Get or generate Aztec SDK local user
-      let account0 = (await sdk.userExists(accPubKey))
-        ? await sdk.getUser(accPubKey)
-        : await sdk.addUser(accPriKey);
-      setAccount0(account0);
+        // Get or generate Aztec SDK local user
+        let account0 = (await sdk.userExists(accPubKey))
+          ? await sdk.getUser(accPubKey)
+          : await sdk.addUser(accPriKey);
+        setAccount0(account0);
 
-      // Generate user's spending key & signer
-      // The spending keypair is used for receiving/spending funds on Aztec
-      const { privateKey: spePriKey } = await sdk.generateSpendingKeyPair(
-        mmAddress
-      );
-      const schSigner = await sdk?.createSchnorrSigner(spePriKey);
-      console.log("Signer:", schSigner);
-      setSpendingSigner(schSigner);
+        // Generate user's spending key & signer
+        // The spending keypair is used for receiving/spending funds on Aztec
+        const { privateKey: spePriKey } = await sdk.generateSpendingKeyPair(
+          mmAddress
+        );
+        const schSigner = await sdk?.createSchnorrSigner(spePriKey);
+        console.log("Signer:", schSigner);
+        setSpendingSigner(schSigner);
 
-      setIniting(false); // End init status
+        setIniting(false); // End init status
       }
     } catch (e) {
       console.log(e);
@@ -144,7 +142,7 @@ const App = () => {
         .parseEther(amount.toString())
         .toBigInt();
 
-      console.log(ethAccount!, accountPublicKey!, depositTokenQuantity, sdk)
+      console.log(ethAccount!, accountPublicKey!, depositTokenQuantity, sdk);
 
       let txId = await depositEthToAztec(
         ethAccount!,
@@ -170,7 +168,7 @@ const App = () => {
       let txId = await aztecConnect(
         account0!,
         spendingSigner!,
-        6, // Testnet bridge id of CurveStEthBridge
+        2, // Testnet bridge id of CurveStEthBridge
         fromAmount,
         "ETH",
         "WSTETH",
@@ -197,12 +195,10 @@ const App = () => {
         await sdk!.getBalance(account0!.id, sdk!.getAssetIdBySymbol("eth"))
       ),
       ", wstETH -",
-      sdk!.fromBaseUnits(
-        await sdk!.getBalance(account0!.id, 2)
-      )
+      sdk!.fromBaseUnits(await sdk!.getBalance(account0!.id, 2))
     );
   }
-  
+
   async function logBridges() {
     const bridges = await fetchBridgeData();
     console.log("Known bridges on local testnet:", bridges);
@@ -270,13 +266,7 @@ const App = () => {
             )}
             <button onClick={() => logBridges()}>Log Bridges</button>
             <button onClick={() => console.log("sdk", sdk)}>Log SDK</button>
-            {txId ? (
-              <div>
-                Last TX: {txId.toString()}{" "}
-              </div>
-            ) : (
-              ""
-            )}
+            {txId ? <div>Last TX: {txId.toString()} </div> : ""}
           </div>
         ) : (
           <button onClick={() => connect()}>Connect Metamask</button>

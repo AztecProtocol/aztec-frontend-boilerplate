@@ -6,11 +6,9 @@ import {
 import { EthAddress, JsonRpcProvider } from "@aztec/sdk";
 
 export async function fetchBridgeData() {
-  const provider = new JsonRpcProvider(
-    "http://localhost:8545"
-  );
+  const provider = new JsonRpcProvider("http://localhost:8545");
   const testnetAddress = EthAddress.fromString(
-    "0x09120eAED8e4cD86D85a616680151DAA653880F2"
+    "0x773330693cb7d5D233348E25809770A32483A940"
   );
   const dataProvider = DataProviderWrapper.create(
     provider,
