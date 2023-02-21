@@ -15,10 +15,15 @@ import {
   BarretenbergWasm,
   createIframeAztecWalletProviderServer,
   LegacyKeyStore,
+  EIP1193SignClient,
+  AztecWalletProviderClient,
+  RPC_METHODS,
 } from "@aztec/sdk";
 
 // import { depositEthToAztec, registerAccount, aztecConnect } from "./utils.js";
 // import { fetchBridgeData } from "./bridge-data.js";
+
+import { createClient, createWeb3Modal } from "./walletConnect.js";
 
 declare var window: any;
 
@@ -84,46 +89,43 @@ const App = () => {
           debug: "bb:*",
           minConfirmation: 1, // ETH block confirmations
         });
-        if (useWalletConnect) {
-          const signClient = await createClient();
-          const web3Modal = await createWeb3Modal();
-          const aztecChainId = +(aztecChainIdStr || "671337");
-          const chains = [`aztec:${aztecChainId}`];
 
-          const { uri, approval } = await signClient.connect({
-            requiredNamespaces: {
-              aztec: {
-                methods: [],
-                chains,
-                events: RPC_METHODS,
-              },
-            },
-          });
-
-          await web3Modal.openModal({ uri, standaloneChains: chains });
-          const session = await approval();
-          web3Modal.closeModal();
-
-          const awpClient = new AztecWalletProviderClient(
-            new EIP1193SignClient(signClient, aztecChainId, session)
-          );
-
-          this.aztecWalletProvider = await awpClient.init();
-        }
-
-        await sdk.run();
-        await sdk.awaitSynchronised();
         console.log("Aztec SDK initialized:", sdk);
         setSdk(sdk);
 
-        const keyStore = sdk.createLegacyKeyStore(
-          ethAddress,
-          [],
-          ethereumProvider
+        const signClient = await createClient();
+        const web3Modal = await createWeb3Modal();
+        const aztecChainId = +"671337";
+        const chains = [`aztec:${aztecChainId}`];
+
+        const { uri, approval } = await signClient.connect({
+          requiredNamespaces: {
+            aztec: {
+              methods: [],
+              chains,
+              events: RPC_METHODS,
+            },
+          },
+        });
+
+        await web3Modal.openModal({ uri, standaloneChains: chains });
+        const session = await approval();
+        web3Modal.closeModal();
+
+        const awpClient = new AztecWalletProviderClient(
+          new EIP1193SignClient(signClient, aztecChainId, session)
         );
-        const aztecWalletProvider = await sdk.createAztecWalletProvider(
-          keyStore
-        );
+
+        const aztecWalletProvider = await awpClient.init();
+
+        // const keyStore = sdk.createLegacyKeyStore(
+        //   ethAddress,
+        //   [],
+        //   ethereumProvider
+        // );
+        // const aztecWalletProvider = await sdk.createAztecWalletProvider(
+        //   keyStore
+        // );
 
         await aztecWalletProvider.connect();
         const accountPublicKey = await sdk.addAccount(aztecWalletProvider);
