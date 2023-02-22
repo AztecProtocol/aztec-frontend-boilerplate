@@ -9,16 +9,12 @@ import {
   GrumpkinAddress,
   EthAddress,
   EthereumRpc,
-  BarretenbergWasm,
-  createIframeAztecWalletProviderServer,
-  LegacyKeyStore,
   EIP1193SignClient,
   AztecWalletProviderClient,
   RPC_METHODS,
+  ProofRequestOptions,
+  GetFeesOptions,
 } from "@aztec/sdk";
-
-// import { depositEthToAztec, registerAccount, aztecConnect } from "./utils.js";
-// import { fetchBridgeData } from "./bridge-data.js";
 
 import { createClient, createWeb3Modal } from "./walletConnect.js";
 
@@ -29,8 +25,6 @@ const App = () => {
   const [ethAddress, setEthAddress] = useState<EthAddress | null>(null);
   const [initing, setIniting] = useState(false);
   const [sdk, setSdk] = useState<null | AztecSdk>(null);
-  const [account0, setAccount0] = useState<GrumpkinAddress | null>(null);
-  const [ethereumRpc, setEthereumRpc] = useState<EthereumRpc | null>(null);
   const [accountPublicKey, setAccountPublicKey] =
     useState<GrumpkinAddress | null>(null);
 
@@ -41,17 +35,6 @@ const App = () => {
     }
     window.ethereum.on("accountsChanged", () => window.location.reload());
   }, []);
-
-  async function iframeMain() {
-    const ethereumRpc = new EthereumRpc(window.ethereum);
-    const [depositor] = await ethereumRpc.getAccounts();
-    const wasm = await BarretenbergWasm.new();
-    const server = createIframeAztecWalletProviderServer(
-      wasm,
-      new LegacyKeyStore(window.ethereum, depositor, wasm, [])
-    );
-    server.run();
-  }
 
   async function connectWallet() {
     try {
@@ -65,9 +48,6 @@ const App = () => {
         let [ethAddress] = await ethereumRpc.getAccounts();
         setEthAddress(ethAddress);
 
-        // Get Metamask ethAccount
-        // await provider.send("eth_requestAccounts", []);
-
         // Initialize SDK
         const sdk = await createAztecSdk(ethereumProvider, {
           serverUrl: "http://localhost:8081", // local devnet, run `yarn devnet` to start
@@ -80,42 +60,45 @@ const App = () => {
         console.log("Aztec SDK initialized:", sdk);
         setSdk(sdk);
 
-        const signClient = await createClient();
-        const web3Modal = await createWeb3Modal();
-        const aztecChainId = +"671337";
-        const chains = [`aztec:${aztecChainId}`];
+        const useWalletConnect = true;
+        let aztecWalletProvider;
 
-        const { uri, approval } = await signClient.connect({
-          requiredNamespaces: {
-            aztec: {
-              methods: [],
-              chains,
-              events: RPC_METHODS,
+        if (useWalletConnect) {
+          const signClient = await createClient();
+          const web3Modal = await createWeb3Modal();
+          const aztecChainId = +"671337";
+          const chains = [`aztec:${aztecChainId}`];
+
+          const { uri, approval } = await signClient.connect({
+            requiredNamespaces: {
+              aztec: {
+                methods: [],
+                chains,
+                events: RPC_METHODS,
+              },
             },
-          },
-        });
+          });
 
-        await web3Modal.openModal({ uri, standaloneChains: chains });
-        const session = await approval();
-        web3Modal.closeModal();
+          await web3Modal.openModal({ uri, standaloneChains: chains });
+          const session = await approval();
+          web3Modal.closeModal();
 
-        const awpClient = new AztecWalletProviderClient(
-          new EIP1193SignClient(signClient, aztecChainId, session)
-        );
+          const awpClient = new AztecWalletProviderClient(
+            new EIP1193SignClient(signClient, aztecChainId, session)
+          );
 
-        const aztecWalletProvider = await awpClient.init();
+          aztecWalletProvider = await awpClient.init();
+        } else {
+          const keyStore = sdk.createLegacyKeyStore(
+            ethAddress,
+            [],
+            ethereumProvider
+          );
+          aztecWalletProvider = await sdk.createAztecWalletProvider(keyStore);
+        }
 
-        // const keyStore = sdk.createLegacyKeyStore(
-        //   ethAddress,
-        //   [],
-        //   ethereumProvider
-        // );
-        // const aztecWalletProvider = await sdk.createAztecWalletProvider(
-        //   keyStore
-        // );
-
-        await aztecWalletProvider.connect();
-        const accountPublicKey = await sdk.addAccount(aztecWalletProvider);
+        await aztecWalletProvider!.connect();
+        const accountPublicKey = await sdk.addAccount(aztecWalletProvider!);
         setAccountPublicKey(accountPublicKey);
 
         console.log("Aztec public key:", accountPublicKey);
@@ -138,15 +121,14 @@ const App = () => {
     const value = sdk!.toBaseUnits(assetId, valueStr);
     const [, fee] = await sdk!.getDepositFees(assetId);
     const publicInput = value.value + fee.value;
-    const [depositor] = await ethereumRpc!.getAccounts();
     const controller = sdk!.createDepositController(
-      depositor,
+      ethAddress!,
       value,
       fee,
       accountPublicKey!,
-      true
+      false
     );
-    const assetBalance = await sdk!.getPublicBalance(depositor, assetId);
+    const assetBalance = await sdk!.getPublicBalance(ethAddress!, assetId);
     const pendingBalance = await controller.getPendingFunds();
     if (assetBalance.value + pendingBalance < publicInput) {
       throw new Error("insufficient balance.");
@@ -160,6 +142,95 @@ const App = () => {
     await controller.send();
   }
 
+  async function withdraw(valueStr: string, assetId: number) {
+    const value = sdk!.toBaseUnits(assetId, valueStr);
+
+    const feeOptions: GetFeesOptions = {
+      // accountPublicKey: accountPublicKey!,
+      // spendingKeyRequired: false,
+      // excludePendingNotes: false,
+      // feeSignificantFigures: 6,
+    };
+
+    const [, fee] = await sdk!.getWithdrawFees(assetId, {
+      ...feeOptions,
+      recipient: ethAddress!,
+    });
+
+    const proofRequestOptions: ProofRequestOptions = {
+      // excludedNullifiers: [],
+      excludePendingNotes: false,
+      useAccountKey: true,
+      allowChain: true,
+      hideNoteCreator: true,
+    };
+
+    const controller = sdk!.createWithdrawController(
+      accountPublicKey!,
+      value,
+      fee,
+      ethAddress!,
+      proofRequestOptions
+    );
+    await controller.createProofs();
+    await controller.send();
+  }
+
+  async function logBalance() {
+    let ethBalance = sdk?.fromBaseUnits(
+      await sdk?.getBalance(accountPublicKey!, 0),
+      true,
+      6
+    );
+
+    console.log("ETH Balance:", ethBalance);
+  }
+
+  async function transfer(alias: string, valueStr: string, assetId: number) {
+    const to = await sdk!.getAccountPublicKey(alias);
+    const value = sdk!.toBaseUnits(assetId, valueStr);
+
+    const feeOptions: GetFeesOptions = {
+      // accountPublicKey: accountPublicKey!,
+      // spendingKeyRequired: false,
+      // excludePendingNotes: false,
+      // feeSignificantFigures: 6,
+    };
+
+    const [, fee] = await sdk!.getTransferFees(assetId, feeOptions);
+
+    const proofRequestOptions: ProofRequestOptions = {
+      // excludedNullifiers: [],
+      excludePendingNotes: false,
+      // useAccountKey: true,
+      allowChain: true,
+      hideNoteCreator: true,
+    };
+
+    const controller = sdk!.createTransferController(
+      accountPublicKey!,
+      value,
+      fee,
+      to,
+      true, // flag for spending key
+      proofRequestOptions
+    );
+    await controller.createProofs();
+    await controller.send();
+  }
+
+  async function userInfo() {
+    console.log("Account Public Key:", accountPublicKey!.toShortString());
+    console.log(
+      "Synchronized: ",
+      await sdk!.isAccountSynching(accountPublicKey!)
+    );
+    console.log(
+      "Account Registered: ",
+      await sdk!.isAccountRegistered(accountPublicKey!)
+    );
+  }
+
   // Registering on Aztec enables the use of intuitive aliases for fund transfers
   // It registers an human-readable alias with the user's privacy & spending keypairs
   // All future funds transferred to the alias would be viewable with the privacy key and spendable with the spending key respectively
@@ -170,7 +241,10 @@ const App = () => {
         sdk ? (
           <div>
             <button onClick={() => console.log("sdk", sdk)}>Log SDK</button>
-            <button onClick={() => iframeMain()}>Connect iframe</button>
+            <button onClick={() => deposit("1")}>Deposit 1 ETH</button>
+            <button onClick={() => logBalance()}>Log Balance</button>
+            <button onClick={() => withdraw("0.1", 0)}>Withdraw</button>
+            <button onClick={() => userInfo()}>User Info</button>
           </div>
         ) : (
           <div>

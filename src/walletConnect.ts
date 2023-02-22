@@ -16,7 +16,7 @@ export async function createClient() {
     logger: 'debug',
     core,
     metadata: {
-      name: 'Hummus',
+      name: 'Aztec Frontend Boilerplate',
       description: 'An example dapp',
       url: window.location.href,
       icons: ['https://zk.money/assets/yield_logo-2296066e.svg'],
