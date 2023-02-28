@@ -6,7 +6,6 @@ import {
   createAztecSdk,
   EthersAdapter,
   EthereumProvider,
-  SdkFlavour,
   AztecSdkUser,
   GrumpkinAddress,
   SchnorrSigner,
@@ -32,9 +31,9 @@ const App = () => {
   );
   const [accountPublicKey, setAccountPublicKey] =
     useState<GrumpkinAddress | null>(null);
-  const [spendingSigner, setSpendingSigner] = useState<
-    SchnorrSigner | undefined
-  >(undefined);
+  const [spendingSigner, setSpendingSigner] = useState<SchnorrSigner | null>(
+    null
+  );
   const [alias, setAlias] = useState("");
   const [amount, setAmount] = useState(0);
   const [txId, setTxId] = useState<TxId | null>(null);
@@ -53,7 +52,6 @@ const App = () => {
         setIniting(true); // Start init status
 
         // Get Metamask provider
-        // TODO: Show error if Metamask is not on Aztec Testnet
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const ethereumProvider: EthereumProvider = new EthersAdapter(provider);
 
@@ -68,7 +66,6 @@ const App = () => {
           serverUrl: "http://localhost:8081", // local devnet, run `yarn devnet` to start
           pollInterval: 2000,
           debug: "bb:*",
-          minConfirmation: 1, // ETH block confirmations
         });
         await sdk.run();
         await sdk.awaitSynchronised();
