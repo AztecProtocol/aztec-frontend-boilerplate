@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@aztec/sdk": "2.2.0-alpha.3",
+    "@aztec/sdk": "2.2.0-alpha.5",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
@@ -62,6 +62,6 @@
     "webpack": "^5.75.0"
   },
   "resolutions": {
-    "@aztec/barretenberg": "2.2.0-alpha.3"
+    "@aztec/barretenberg": "2.2.0-alpha.5"
   }
 }

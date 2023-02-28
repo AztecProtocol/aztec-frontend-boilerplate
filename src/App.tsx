@@ -14,6 +14,8 @@ import {
   RPC_METHODS,
   ProofRequestOptions,
   GetFeesOptions,
+  VanillaAztecWalletProvider,
+  AztecWalletProvider,
 } from "@aztec/sdk";
 
 import { createClient, createWeb3Modal } from "./walletConnect.js";
@@ -22,6 +24,7 @@ declare var window: any;
 
 const App = () => {
   const [hasMetamask, setHasMetamask] = useState(false);
+  const [useWalletConnect, setUseWalletConnect] = useState(true);
   const [ethAddress, setEthAddress] = useState<EthAddress | null>(null);
   const [initing, setIniting] = useState(false);
   const [sdk, setSdk] = useState<null | AztecSdk>(null);
@@ -36,7 +39,7 @@ const App = () => {
     window.ethereum.on("accountsChanged", () => window.location.reload());
   }, []);
 
-  async function connectWallet() {
+  async function setup() {
     try {
       if (window.ethereum) {
         setIniting(true); // Start init status
@@ -60,7 +63,6 @@ const App = () => {
         console.log("Aztec SDK initialized:", sdk);
         setSdk(sdk);
 
-        const useWalletConnect = true;
         let aztecWalletProvider;
 
         if (useWalletConnect) {
@@ -89,25 +91,19 @@ const App = () => {
 
           aztecWalletProvider = await awpClient.init();
         } else {
-          const keyStore = sdk.createLegacyKeyStore(
-            ethAddress,
+          const keyStore = sdk!.createLegacyKeyStore(
+            ethAddress!,
             [],
-            ethereumProvider
+            ethereumProvider!
           );
-          aztecWalletProvider = await sdk.createAztecWalletProvider(keyStore);
+          aztecWalletProvider = await sdk!.createAztecWalletProvider(keyStore);
         }
 
-        await aztecWalletProvider!.connect();
-        const accountPublicKey = await sdk.addAccount(aztecWalletProvider!);
+        await aztecWalletProvider.connect();
+        const accountPublicKey = await sdk!.addAccount(aztecWalletProvider);
         setAccountPublicKey(accountPublicKey);
-
-        console.log("Aztec public key:", accountPublicKey);
-
-        sdk.run();
-        await sdk.awaitAccountSynchronised(accountPublicKey);
-
-        console.log("Account synced.");
-
+        sdk!.run();
+        await sdk!.awaitAccountSynchronised(accountPublicKey);
         setIniting(false); // End init status
       }
     } catch (e) {
@@ -231,6 +227,11 @@ const App = () => {
     );
   }
 
+  function toggleUseWalletConnect() {
+    console.log(useWalletConnect);
+    setUseWalletConnect(!useWalletConnect);
+  }
+
   // Registering on Aztec enables the use of intuitive aliases for fund transfers
   // It registers an human-readable alias with the user's privacy & spending keypairs
   // All future funds transferred to the alias would be viewable with the privacy key and spendable with the spending key respectively
@@ -248,7 +249,11 @@ const App = () => {
           </div>
         ) : (
           <div>
-            <button onClick={() => connectWallet()}>Connect Metamask</button>
+            <button onClick={() => setup()}>Connect Aztec Wallet</button>
+            <button onClick={() => toggleUseWalletConnect()}>
+              Toggle WalletConnect
+            </button>
+            <div>Use Wallet connect? {useWalletConnect.toString()}</div>
           </div>
         )
       ) : (

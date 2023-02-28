@@ -2,8 +2,6 @@
 
 This is a sample Aztec frontend powered by [Aztec SDK](https://github.com/AztecProtocol/aztec-connect/tree/master/sdk) and [Create React App](https://github.com/facebook/create-react-app).
 
-By default, the project works on the Aztec Testnet.
-
 You can try it out on: https://aztec-frontend-boilerplate.netlify.app/
 
 ## Functions
