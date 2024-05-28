@@ -1,5 +1,7 @@
 # Aztec Frontend Boilerplate
 
+⚠️ This repo was created for Aztec Connect, which is now deprecated. You can read more about the deprecation [here](https://docs.aztec.network/aztec_connect_sunset).
+
 This is a sample Aztec frontend powered by [Aztec SDK](https://github.com/AztecProtocol/aztec-connect/tree/master/sdk) and [Create React App](https://github.com/facebook/create-react-app).
 
 By default, the project works on the Aztec Testnet.
